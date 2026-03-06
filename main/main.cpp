@@ -20,6 +20,7 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_timer.h"
+#include "esp_heap_caps.h"
 #include "driver/gpio.h"
 
 #include "wifi_manager.h"
@@ -65,7 +66,7 @@ static bool check_config_button(void)
     for (int i = 0; i < 50; i++) {  // 5 seconds max
         if (gpio_get_level(CONFIG_BUTTON_PIN) == 0) {
             hold_count++;
-            if (hold_count * 100 >= CONFIG_HOLD_TIME_MS) {
+            if (hold_count * 100 >= BUTTON_HOLD_TIME_MS) {
                 return true;
             }
         } else {
