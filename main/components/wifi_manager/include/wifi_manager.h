@@ -8,13 +8,22 @@
 
 #include "esp_err.h"
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Initialize WiFi manager
+ * @brief Initialize WiFi manager with runtime credentials
+ * @param ssid WiFi SSID
+ * @param password WiFi password
+ * @return ESP_OK on success
+ */
+esp_err_t wifi_manager_init_with_config(const char *ssid, const char *password);
+
+/**
+ * @brief Initialize WiFi manager using Kconfig credentials
  * @return ESP_OK on success
  */
 esp_err_t wifi_manager_init(void);

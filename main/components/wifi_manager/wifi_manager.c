@@ -20,6 +20,8 @@ static const char *TAG = "wifi_manager";
 static EventGroupHandle_t s_wifi_event_group = NULL;
 static esp_netif_t *s_sta_netif = NULL;
 static bool s_is_connected = false;
+static char s_wifi_ssid[33] = {0};
+static char s_wifi_password[65] = {0};
 
 /**
  * @brief WiFi event handler
@@ -30,7 +32,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
             case WIFI_EVENT_STA_START:
-                ESP_LOGI(TAG, "WiFi STA started, connecting to %s...", CONFIG_WIFI_SSID);
+                ESP_LOGI(TAG, "WiFi STA started, connecting to %s...", s_wifi_ssid);
                 esp_wifi_connect();
                 break;
 
@@ -57,8 +59,20 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-esp_err_t wifi_manager_init(void)
+esp_err_t wifi_manager_init_with_config(const char *ssid, const char *password)
 {
+    if (!ssid || strlen(ssid) == 0) {
+        ESP_LOGE(TAG, "WiFi SSID is empty");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    strncpy(s_wifi_ssid, ssid, sizeof(s_wifi_ssid) - 1);
+    s_wifi_ssid[sizeof(s_wifi_ssid) - 1] = '\0';
+    if (password) {
+        strncpy(s_wifi_password, password, sizeof(s_wifi_password) - 1);
+        s_wifi_password[sizeof(s_wifi_password) - 1] = '\0';
+    }
+
     // Create event group
     s_wifi_event_group = xEventGroupCreate();
     if (s_wifi_event_group == NULL) {
@@ -93,8 +107,8 @@ esp_err_t wifi_manager_init(void)
             },
         },
     };
-    strncpy((char *)wifi_config.sta.ssid, CONFIG_WIFI_SSID, sizeof(wifi_config.sta.ssid) - 1);
-    strncpy((char *)wifi_config.sta.password, CONFIG_WIFI_PASSWORD, sizeof(wifi_config.sta.password) - 1);
+    strncpy((char *)wifi_config.sta.ssid, s_wifi_ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char *)wifi_config.sta.password, s_wifi_password, sizeof(wifi_config.sta.password) - 1);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
@@ -102,6 +116,11 @@ esp_err_t wifi_manager_init(void)
 
     ESP_LOGI(TAG, "WiFi manager initialized");
     return ESP_OK;
+}
+
+esp_err_t wifi_manager_init(void)
+{
+    return wifi_manager_init_with_config(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);
 }
 
 bool wifi_manager_is_connected(void)

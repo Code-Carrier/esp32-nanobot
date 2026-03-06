@@ -15,7 +15,15 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize Feishu Bot
+ * @brief Initialize feishu_bot with runtime credentials
+ * @param app_id App ID
+ * @param app_secret App secret
+ * @return ESP_OK on success
+ */
+esp_err_t feishu_bot_init_with_config(const char *app_id, const char *app_secret);
+
+/**
+ * @brief Initialize Feishu Bot using Kconfig credentials
  * @return ESP_OK on success
  */
 esp_err_t feishu_bot_init(void);

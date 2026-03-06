@@ -146,7 +146,10 @@ esp_err_t config_manager_load(device_config_t *config)
 
     // Display Settings
     config->display_enabled = (nvs_get_u8(nvs_handle, "disp_en", (uint8_t*)&config->display_enabled) == ESP_OK);
-    config->display_brightness = nvs_get_u8(nvs_handle, "disp_bright", (uint8_t*)&config->display_brightness);
+    uint8_t brightness = (uint8_t)config->display_brightness;
+    if (nvs_get_u8(nvs_handle, "disp_bright", &brightness) == ESP_OK) {
+        config->display_brightness = brightness;
+    }
 
     nvs_close(nvs_handle);
     return ESP_OK;

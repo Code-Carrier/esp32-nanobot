@@ -176,20 +176,29 @@ static esp_err_t feishu_bot_send_message_api(const char *open_id, const char *co
     return err;
 }
 
-esp_err_t feishu_bot_init(void)
+esp_err_t feishu_bot_init_with_config(const char *app_id, const char *app_secret)
 {
-    strncpy(s_app_id, CONFIG_FEISHU_APP_ID, sizeof(s_app_id) - 1);
-    strncpy(s_app_secret, CONFIG_FEISHU_APP_SECRET, sizeof(s_app_secret) - 1);
-
-    if (strlen(s_app_id) == 0 || strlen(s_app_secret) == 0) {
+    if (!app_id || !app_secret || strlen(app_id) == 0 || strlen(app_secret) == 0) {
         ESP_LOGE(TAG, "Feishu App ID or Secret not configured");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_LOGI(TAG, "Feishu Bot initialized (AppID: %s****)", s_app_id + strlen(s_app_id) - 4);
+    strncpy(s_app_id, app_id, sizeof(s_app_id) - 1);
+    s_app_id[sizeof(s_app_id) - 1] = '\0';
+    strncpy(s_app_secret, app_secret, sizeof(s_app_secret) - 1);
+    s_app_secret[sizeof(s_app_secret) - 1] = '\0';
+
+    size_t id_len = strlen(s_app_id);
+    const char *mask = id_len >= 4 ? s_app_id + id_len - 4 : s_app_id;
+    ESP_LOGI(TAG, "Feishu Bot initialized (AppID: %s****)", mask);
 
     // Initial token fetch
     return feishu_bot_get_token();
+}
+
+esp_err_t feishu_bot_init(void)
+{
+    return feishu_bot_init_with_config(CONFIG_FEISHU_APP_ID, CONFIG_FEISHU_APP_SECRET);
 }
 
 void feishu_bot_task(void *pvParameters)

@@ -6,6 +6,7 @@
 #include "qq_bot.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "esp_timer.h"
 #include "cJSON.h"
 #include <string.h>
 #include <stdio.h>
@@ -156,20 +157,29 @@ static esp_err_t qq_bot_send_message_api(const char *openid, const char *content
     return err;
 }
 
-esp_err_t qq_bot_init(void)
+esp_err_t qq_bot_init_with_config(const char *app_id, const char *app_secret)
 {
-    strncpy(s_app_id, CONFIG_QQ_APP_ID, sizeof(s_app_id) - 1);
-    strncpy(s_app_secret, CONFIG_QQ_APP_SECRET, sizeof(s_app_secret) - 1);
-
-    if (strlen(s_app_id) == 0 || strlen(s_app_secret) == 0) {
+    if (!app_id || !app_secret || strlen(app_id) == 0 || strlen(app_secret) == 0) {
         ESP_LOGE(TAG, "QQ App ID or Secret not configured");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_LOGI(TAG, "QQ Bot initialized (AppID: %s****)", s_app_id + strlen(s_app_id) - 4);
+    strncpy(s_app_id, app_id, sizeof(s_app_id) - 1);
+    s_app_id[sizeof(s_app_id) - 1] = '\0';
+    strncpy(s_app_secret, app_secret, sizeof(s_app_secret) - 1);
+    s_app_secret[sizeof(s_app_secret) - 1] = '\0';
+
+    size_t id_len = strlen(s_app_id);
+    const char *mask = id_len >= 4 ? s_app_id + id_len - 4 : s_app_id;
+    ESP_LOGI(TAG, "QQ Bot initialized (AppID: %s****)", mask);
 
     // Initial token fetch
     return qq_bot_get_token();
+}
+
+esp_err_t qq_bot_init(void)
+{
+    return qq_bot_init_with_config(CONFIG_QQ_APP_ID, CONFIG_QQ_APP_SECRET);
 }
 
 void qq_bot_task(void *pvParameters)
