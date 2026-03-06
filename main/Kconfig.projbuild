@@ -73,6 +73,36 @@ menu "ESP32 NanoBot Configuration"
             help
                 Path to the git repository on SD card
 
+        config GITHUB_API_ENABLED
+            bool "Enable GitHub API for real commits"
+            default n
+            help
+                Fetch today's commits from GitHub REST API when enabled.
+
+        config GITHUB_OWNER
+            string "GitHub owner"
+            default ""
+            help
+                Repository owner or organization, e.g. your username.
+
+        config GITHUB_REPO
+            string "GitHub repository"
+            default ""
+            help
+                Repository name, e.g. esp32-nanobot.
+
+        config GITHUB_AUTHOR
+            string "GitHub author (optional)"
+            default ""
+            help
+                Optional author login filter for commits.
+
+        config GITHUB_TOKEN
+            string "GitHub token (optional)"
+            default ""
+            help
+                Optional personal access token to avoid rate limit/private repo access.
+
         config SUMMARY_SEND_TIME
             string "Daily Summary Send Time (HH:MM)"
             default "18:00"

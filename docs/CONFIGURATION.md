@@ -274,6 +274,20 @@ ESP32 NanoBot Configuration → Feishu Bot Settings
   → Feishu App Secret: xxxxxxxxxxxx
 ```
 
+
+#### 4. 配置每日总结 GitHub 提交来源（可选）
+
+> 如果你主要把代码上传到 GitHub，建议开启该项，这样每日总结会拉取**真实提交**而不是示例数据。
+
+```
+ESP32 NanoBot Configuration → Daily Summary Skill
+  → Enable GitHub API for real commits: [*]
+  → GitHub owner: [你的 GitHub 用户名或组织]
+  → GitHub repository: [仓库名]
+  → GitHub author (optional): [你的 GitHub 登录名，可选]
+  → GitHub token (optional): [PAT，可选，私有仓库建议配置]
+```
+
 ### 保存并编译
 
 1. 按 `S` 保存配置
