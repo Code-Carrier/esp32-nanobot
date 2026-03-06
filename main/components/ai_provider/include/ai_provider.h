@@ -16,6 +16,7 @@
 
 #include "esp_err.h"
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +73,14 @@ typedef struct {
 typedef void (*ai_response_callback_t)(const char *content, void *user_data);
 
 /**
- * @brief Initialize AI Provider
+ * @brief Initialize AI Provider with runtime configuration
+ * @param config Provider configuration
+ * @return ESP_OK on success
+ */
+esp_err_t ai_provider_init_with_config(const ai_provider_config_t *config);
+
+/**
+ * @brief Initialize AI Provider using Kconfig configuration
  * @return ESP_OK on success
  */
 esp_err_t ai_provider_init(void);

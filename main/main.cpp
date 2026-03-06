@@ -98,7 +98,7 @@ static void wifi_task(void *pvParameters)
 {
     device_config_t *config = (device_config_t *)pvParameters;
 
-    ESP_ERROR_CHECK(wifi_manager_init());
+    ESP_ERROR_CHECK(wifi_manager_init_with_config(config->wifi_ssid, config->wifi_password));
 
     // Wait for WiFi connection with timeout
     TickType_t timeout = pdMS_TO_TICKS(30000);
@@ -224,7 +224,7 @@ extern "C" void app_main(void)
     device_config_t *config = config_manager_get_current();
 
     // Check if we should enter AP configuration mode
-    bool enter_ap_mode = !config_manager_is_configured();
+    bool enter_ap_mode = !config_manager_is_configured() || check_config_button();
 
 #ifdef CONFIG_ENTER_AP_MODE_ALWAYS
     enter_ap_mode = true;
@@ -269,8 +269,10 @@ extern "C" void app_main(void)
     else if (strcmp(config->ai_provider_type, "volcengine") == 0) ai_config.type = AI_PROVIDER_VOLCENGINE;
     else if (strcmp(config->ai_provider_type, "zhipu") == 0) ai_config.type = AI_PROVIDER_ZHIPU;
 
-    if (ai_provider_init() == ESP_OK) {
+    if (ai_provider_init_with_config(&ai_config) == ESP_OK) {
         ESP_LOGI(TAG, "AI Provider initialized");
+    } else {
+        ESP_LOGW(TAG, "AI Provider init failed, AI features will be unavailable");
     }
 
     // Start display task
@@ -291,7 +293,7 @@ extern "C" void app_main(void)
 
     // Initialize QQ Bot (if enabled)
     if (config->qq_bot_enabled) {
-        if (qq_bot_init() == ESP_OK) {
+        if (qq_bot_init_with_config(config->qq_app_id, config->qq_app_secret) == ESP_OK) {
             ESP_LOGI(TAG, "QQ Bot initialized");
             xTaskCreate(qq_bot_task, "qq_bot_task", 8192, NULL, 5, &s_qq_bot_task_handle);
         }
@@ -299,7 +301,7 @@ extern "C" void app_main(void)
 
     // Initialize Feishu Bot (if enabled)
     if (config->feishu_bot_enabled) {
-        if (feishu_bot_init() == ESP_OK) {
+        if (feishu_bot_init_with_config(config->feishu_app_id, config->feishu_app_secret) == ESP_OK) {
             ESP_LOGI(TAG, "Feishu Bot initialized");
             xTaskCreate(feishu_bot_task, "feishu_bot_task", 8192, NULL, 5, &s_feishu_bot_task_handle);
         }

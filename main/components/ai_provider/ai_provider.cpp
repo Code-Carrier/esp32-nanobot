@@ -138,41 +138,50 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-esp_err_t ai_provider_init(void)
+esp_err_t ai_provider_init_with_config(const ai_provider_config_t *config)
 {
-    // Load configuration from Kconfig
-    const char *api_key = CONFIG_AI_PROVIDER_API_KEY;
-    const char *model = CONFIG_AI_PROVIDER_MODEL;
-    const char *base_url = CONFIG_AI_PROVIDER_BASE_URL;
-
-    if (!api_key || strlen(api_key) == 0) {
+    if (!config || !config->api_key || strlen(config->api_key) == 0) {
         ESP_LOGE(TAG, "API key not configured!");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_ERR_INVALID_ARG;
     }
 
-    // Parse provider type
+    s_config = *config;
+    if (!s_config.base_url || strlen(s_config.base_url) == 0) {
+        s_config.base_url = DEFAULT_BASE_URLS[s_config.type];
+    }
+    if (s_config.timeout_ms <= 0) s_config.timeout_ms = 30000;
+    if (s_config.max_tokens <= 0) s_config.max_tokens = 2048;
+    if (s_config.temperature <= 0.0f) s_config.temperature = 0.7f;
+
+    ESP_LOGI(TAG, "AI Provider initialized: %s", PROVIDER_NAMES[s_config.type]);
+    ESP_LOGI(TAG, "  Base URL: %s", s_config.base_url);
+    ESP_LOGI(TAG, "  Model: %s", s_config.model ? s_config.model : "(default)");
+
+    s_initialized = true;
+    return ESP_OK;
+}
+
+esp_err_t ai_provider_init(void)
+{
+    ai_provider_config_t cfg = {
+        .type = AI_PROVIDER_DEEPSEEK,
+        .api_key = CONFIG_AI_PROVIDER_API_KEY,
+        .base_url = CONFIG_AI_PROVIDER_BASE_URL,
+        .model = CONFIG_AI_PROVIDER_MODEL,
+        .timeout_ms = 30000,
+        .max_tokens = 2048,
+        .temperature = 0.7f,
+    };
+
     const char *type_str = CONFIG_AI_PROVIDER_TYPE;
-    s_config.type = AI_PROVIDER_DEEPSEEK; // default
     for (int i = 0; i < sizeof(PROVIDER_NAMES) / sizeof(PROVIDER_NAMES[0]); i++) {
         if (strcmp(type_str, PROVIDER_NAMES[i]) == 0) {
-            s_config.type = (ai_provider_type_t)i;
+            cfg.type = (ai_provider_type_t)i;
             break;
         }
     }
 
-    s_config.api_key = api_key;
-    s_config.base_url = (base_url && strlen(base_url) > 0) ? base_url : DEFAULT_BASE_URLS[s_config.type];
-    s_config.model = model;
-    s_config.timeout_ms = 30000;
-    s_config.max_tokens = 2048;
-    s_config.temperature = 0.7f;
-
-    ESP_LOGI(TAG, "AI Provider initialized: %s", PROVIDER_NAMES[s_config.type]);
-    ESP_LOGI(TAG, "  Base URL: %s", s_config.base_url);
-    ESP_LOGI(TAG, "  Model: %s", s_config.model);
-
-    s_initialized = true;
-    return ESP_OK;
+    return ai_provider_init_with_config(&cfg);
 }
 
 esp_err_t ai_provider_deinit(void)

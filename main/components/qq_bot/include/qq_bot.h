@@ -15,7 +15,15 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize QQ Bot
+ * @brief Initialize qq_bot with runtime credentials
+ * @param app_id App ID
+ * @param app_secret App secret
+ * @return ESP_OK on success
+ */
+esp_err_t qq_bot_init_with_config(const char *app_id, const char *app_secret);
+
+/**
+ * @brief Initialize QQ Bot using Kconfig credentials
  * @return ESP_OK on success
  */
 esp_err_t qq_bot_init(void);
