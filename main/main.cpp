@@ -269,7 +269,8 @@ extern "C" void app_main(void)
     else if (strcmp(config->ai_provider_type, "volcengine") == 0) ai_config.type = AI_PROVIDER_VOLCENGINE;
     else if (strcmp(config->ai_provider_type, "zhipu") == 0) ai_config.type = AI_PROVIDER_ZHIPU;
 
-    if (ai_provider_init_with_config(&ai_config) == ESP_OK) {
+    bool ai_ready = (ai_provider_init_with_config(&ai_config) == ESP_OK);
+    if (ai_ready) {
         ESP_LOGI(TAG, "AI Provider initialized");
     } else {
         ESP_LOGW(TAG, "AI Provider init failed, AI features will be unavailable");
@@ -282,7 +283,7 @@ extern "C" void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     // Show AI status
-    tft_show_ai_status(true);
+    tft_show_ai_status(ai_ready);
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     // Start WiFi task
