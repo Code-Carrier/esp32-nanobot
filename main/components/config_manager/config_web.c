@@ -26,6 +26,42 @@ static bool s_running = false;
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+static bool json_get_string(const char *json, const char *key, char *out, size_t out_size)
+{
+    if (!json || !key || !out || out_size == 0) {
+        return false;
+    }
+
+    char pattern[64];
+    snprintf(pattern, sizeof(pattern), "\"%s\":\"", key);
+
+    const char *p = strstr(json, pattern);
+    if (!p) {
+        return false;
+    }
+
+    p += strlen(pattern);
+    const char *end = strchr(p, '"');
+    if (!end) {
+        return false;
+    }
+
+    size_t len = MIN((size_t)(end - p), out_size - 1);
+    memcpy(out, p, len);
+    out[len] = '\0';
+    return true;
+}
+
+static bool json_get_checkbox_enabled(const char *json, const char *key)
+{
+    char value[8] = {0};
+    if (!json_get_string(json, key, value, sizeof(value))) {
+        return false;
+    }
+
+    return strcmp(value, "on") == 0;
+}
+
 // HTML configuration page (stored in flash)
 static const char INDEX_HTML[] = R"rawliteral(
 <!DOCTYPE html>
@@ -322,60 +358,31 @@ static esp_err_t save_handler(httpd_req_t *req)
 
     device_config_t config = *config_manager_get_current();
 
-    // Parse JSON (simple parsing)
-    // WiFi
-    char *p = strstr(buf, "\"wifi_ssid\":\"");
-    if (p) {
-        p += 13;
-        char *end = strchr(p, '"');
-        if (end) {
-            int len = end - p;
-            strncpy(config.wifi_ssid, p, MIN(len, sizeof(config.wifi_ssid) - 1));
-            config.wifi_configured = true;
-        }
+    // Parse JSON fields
+    if (json_get_string(buf, "wifi_ssid", config.wifi_ssid, sizeof(config.wifi_ssid))) {
+        config.wifi_configured = strlen(config.wifi_ssid) > 0;
     }
+    json_get_string(buf, "wifi_password", config.wifi_password, sizeof(config.wifi_password));
 
-    p = strstr(buf, "\"wifi_password\":\"");
-    if (p) {
-        p += 16;
-        char *end = strchr(p, '"');
-        if (end) {
-            int len = end - p;
-            strncpy(config.wifi_password, p, MIN(len, sizeof(config.wifi_password) - 1));
-        }
+    if (json_get_string(buf, "ai_key", config.ai_provider_api_key, sizeof(config.ai_provider_api_key))) {
+        config.ai_configured = strlen(config.ai_provider_api_key) > 0;
     }
+    json_get_string(buf, "ai_type", config.ai_provider_type, sizeof(config.ai_provider_type));
+    json_get_string(buf, "ai_url", config.ai_provider_base_url, sizeof(config.ai_provider_base_url));
+    json_get_string(buf, "ai_model", config.ai_provider_model, sizeof(config.ai_provider_model));
 
-    // AI Provider
-    p = strstr(buf, "\"ai_key\":\"");
-    if (p) {
-        p += 10;
-        char *end = strchr(p, '"');
-        if (end) {
-            int len = end - p;
-            strncpy(config.ai_provider_api_key, p, MIN(len, sizeof(config.ai_provider_api_key) - 1));
-            config.ai_configured = true;
-        }
-    }
+    config.qq_bot_enabled = json_get_checkbox_enabled(buf, "qq_enabled");
+    json_get_string(buf, "qq_id", config.qq_app_id, sizeof(config.qq_app_id));
+    json_get_string(buf, "qq_secret", config.qq_app_secret, sizeof(config.qq_app_secret));
+    json_get_string(buf, "qq_oid", config.qq_recipient_openid, sizeof(config.qq_recipient_openid));
 
-    p = strstr(buf, "\"ai_type\":\"");
-    if (p) {
-        p += 11;
-        char *end = strchr(p, '"');
-        if (end) {
-            int len = end - p;
-            strncpy(config.ai_provider_type, p, MIN(len, sizeof(config.ai_provider_type) - 1));
-        }
-    }
+    config.feishu_bot_enabled = json_get_checkbox_enabled(buf, "fs_enabled");
+    json_get_string(buf, "fs_id", config.feishu_app_id, sizeof(config.feishu_app_id));
+    json_get_string(buf, "fs_secret", config.feishu_app_secret, sizeof(config.feishu_app_secret));
+    json_get_string(buf, "fs_oid", config.feishu_recipient_openid, sizeof(config.feishu_recipient_openid));
 
-    p = strstr(buf, "\"ai_url\":\"");
-    if (p) {
-        p += 10;
-        char *end = strchr(p, '"');
-        if (end) {
-            int len = end - p;
-            strncpy(config.ai_provider_base_url, p, MIN(len, sizeof(config.ai_provider_base_url) - 1));
-        }
-    }
+    json_get_string(buf, "summary_time", config.summary_send_time, sizeof(config.summary_send_time));
+    json_get_string(buf, "summary_channel", config.summary_channel, sizeof(config.summary_channel));
 
     // Save configuration
     esp_err_t err = config_manager_save(&config);
